@@ -1,0 +1,33 @@
+{
+	"name": "download.discgr.am",
+	"version": "1.0.0",
+	"description": "",
+	"main": "index.js",
+	"scripts": {
+		"build": "tsc",
+		"watch": "tsc -w",
+		"lint": "eslint -c .eslintrc --ext .ts ./src",
+		"start": "npm run build && electron ./build/index.js"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/Discgram/download.discgr.am.git"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/Discgram/download.discgr.am/issues"
+	},
+	"homepage": "https://github.com/Discgram/download.discgr.am#readme",
+	"devDependencies": {
+		"@types/discord-rpc": "^4.0.3",
+		"@types/node": "^18.6.4",
+		"@typescript-eslint/eslint-plugin": "^5.32.0",
+		"@typescript-eslint/parser": "^5.32.0",
+		"discord-rpc": "^4.0.1",
+		"electron": "^20.0.1",
+		"eslint": "^8.21.0",
+		"typescript": "^4.7.4"
+	}
+}

@@ -38,12 +38,12 @@ const updatePresence = (): any => {
 	console.log(`Successfully updated ${client?.user?.username}#${client?.user?.discriminator}'s Rich Presence!`);
 
 	return client?.setActivity({
-		details: "Managing my community",
+		details: "Managing my business",
 		largeImageKey: "onechat",
 		largeImageText: "app.one-chat.co",
 		buttons: [
 			{
-				label: "Secure your community!",
+				label: "Secure your business!",
 				url: "https://one-chat.co",
 			},
 		],

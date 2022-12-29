@@ -1,101 +1,190 @@
-import { join } from "path";
-import { app, BrowserWindow, ipcMain, nativeTheme } from "electron";
-import { register, Client } from "discord-rpc";
+import { app, screen, BrowserWindow, shell } from "electron";
+import { autoUpdater, UpdateDownloadedEvent } from "electron-updater";
+import { Client } from "discord-rpc";
+import path from "path";
 
-class Application {
-	private window!: BrowserWindow;
-	private cient_reg: any;
-	private client!: Client;
-	private startTime: Date;
+let window: BrowserWindow | null = null;
+let client: Client | null = null;
+let startTimestamp: Date = new Date();
+let discordRetryDuration: number = 15;
 
-	constructor() {
-		this.startTime = new Date();
-
-		this.cient_reg = register("991596821455585352");
-		this.client = new Client({ transport: "ipc" });
+// Discord related
+const connectToDiscord = (): any => {
+	if (client) {
+		client.destroy();
 	}
 
-	startApp(): void {
-		app.whenReady().then(() => {
-			this.createWindow();
+	client = new Client({
+		transport: "ipc",
+	});
 
-			app.on("activate", () => {
-				if (BrowserWindow.getAllWindows().length === 0) {
-					this.createWindow();
-				}
-			});
-		});
+	client.on("ready", async () => {
+		console.log(`Successfully authorised as ${client?.user?.username}#${client?.user?.discriminator}`);
+		onStartup();
+	});
 
-		app.on("window-all-closed", () => {
-			if (process.platform !== "darwin") {
-				app.quit();
-			}
-		});
-	}
+	client.once("close", () => {
+		console.error(`Connection to Discord closed. Attempting to reconnect...`);
+		console.log(`Automatically retrying to connect, please wait ${discordRetryDuration} seconds...`);
+		connectToDiscord();
+	});
 
-	createWindow(): void {
-		this.window = new BrowserWindow({
-			width: 800,
-			height: 600,
-			webPreferences: {
-				preload: join(__dirname, "js/preload.js"),
+	setTimeout(() => {
+		client?.login({ clientId: "991596821455585352" });
+	}, discordRetryDuration * 1000);
+};
+
+const updatePresence = (): any => {
+	console.log(`Successfully updated ${client?.user?.username}#${client?.user?.discriminator}'s Rich Presence!`);
+
+	return client?.setActivity({
+		details: "Managing my community",
+		largeImageKey: "onechat",
+		largeImageText: "app.one-chat.co",
+		buttons: [
+			{
+				label: "Secure your community!",
+				url: "https://one-chat.co",
 			},
-			titleBarStyle: "hidden",
-			titleBarOverlay: {
-				color: "#303030",
-				symbolColor: "#FFFFFF",
-				height: 50,
-			},
-		});
+		],
+		startTimestamp: startTimestamp,
+		instance: true,
+	});
+};
 
-		this.window.loadURL("http://local.discgram.us/");
+let initialTasks = [updatePresence],
+	i = 0;
 
-		ipcMain.handle("dark-mode:toggle", () => {
-			if (nativeTheme.shouldUseDarkColors) {
-				nativeTheme.themeSource = "light";
-			} else {
-				nativeTheme.themeSource = "dark";
-			}
-
-			return nativeTheme.shouldUseDarkColors;
-		});
-
-		ipcMain.handle("dark-mode:system", () => {
-			nativeTheme.themeSource = "system";
-		});
+const onStartup = () => {
+	initialTasks[i++]();
+	if (i < initialTasks.length) {
+		setTimeout(onStartup, 5 * 1000); // 5 seconds
 	}
+};
 
-	async setActivity(): Promise<void> {
-		if (!this.client || !this.window) {
-			return;
+// Electron related
+const createWindow = (): BrowserWindow => {
+	const electronScreen = screen;
+	const size = electronScreen.getPrimaryDisplay().workAreaSize;
+
+	window = new BrowserWindow({
+		center: true,
+		width: (size.width / 3) * 2,
+		height: (size.height / 3) * 2,
+		title: "One Chat",
+		titleBarStyle: "hidden",
+		titleBarOverlay: {
+			color: "#303030",
+			symbolColor: "#FFFFFF",
+			height: 49,
+		},
+		icon: path.join(__dirname, "../favicon.ico"),
+		show: false,
+	});
+
+	console.log(path.join(__dirname, "favicon.ico"));
+
+	// production
+	//window.loadURL("https://app.one-chat.co/");
+
+	// dev
+	window.loadURL("http://local.one-chat.co/");
+
+	window.webContents.setWindowOpenHandler(({ url }) => {
+		if (url.includes("one-chat.co")) {
+			return {
+				action: "allow",
+				overrideBrowserWindowOptions: {
+					center: true,
+					width: (size.width / 3) * 2,
+					height: (size.height / 3) * 2,
+					titleBarStyle: "hidden",
+					titleBarOverlay: {
+						color: "#303030",
+						symbolColor: "#FFFFFF",
+						height: 49,
+					},
+					icon: path.join(__dirname, "../favicon.ico"),
+				},
+			};
+		} else {
+			shell.openExternal(url);
+			return { action: "deny" };
 		}
+	});
 
-		this.client.once("ready", () => {
-			this.client
-				.setActivity({
-					startTimestamp: this.startTime,
-					largeImageKey: "discgram",
-					largeImageText: "Discgram",
-					details: "Managing my community!",
-				})
-				.then(console.log)
-				.catch(console.error);
-		});
-	}
+	window.webContents.on("did-finish-load", () => {
+		window?.show();
+	});
+
+	window.on("closed", () => {
+		window = null;
+	});
+
+	return window;
+};
+
+// Check for application updates
+const checkUpdates = (): void => {
+	autoUpdater.checkForUpdatesAndNotify();
+
+	autoUpdater.on("checking-for-update", () => {
+		console.log("Checking for update...");
+	});
+	autoUpdater.on("update-available", (info) => {
+		console.log("Update available.");
+	});
+	autoUpdater.on("update-not-available", (info) => {
+		console.log("Update not available.");
+	});
+	autoUpdater.on("error", (err) => {
+		console.log("Error in auto-updater. " + err);
+	});
+	autoUpdater.on("download-progress", (progressObj) => {
+		let log_message = "Download speed: " + progressObj.bytesPerSecond;
+		log_message = log_message + " - Downloaded " + progressObj.percent + "%";
+		log_message = log_message + " (" + progressObj.transferred + "/" + progressObj.total + ")";
+
+		window?.setProgressBar(progressObj.percent / 100);
+
+		console.log(log_message);
+	});
+	autoUpdater.on("update-downloaded", (ev: UpdateDownloadedEvent) => {
+		console.log("Update downloaded");
+
+		setTimeout(function () {
+			autoUpdater.quitAndInstall();
+		}, 5000);
+	});
+};
+
+try {
+	app.on("ready", () => {
+		checkUpdates();
+
+		setTimeout(createWindow, 400);
+		connectToDiscord();
+	});
+
+	app.on("window-all-closed", () => {
+		if (process.platform !== "darwin") {
+			app.quit();
+		}
+	});
+
+	app.on("activate", () => {
+		if (window === null) {
+			createWindow();
+		}
+	});
+
+	process.on("unhandledRejection", (err: any) => {
+		if (err.message === "Could not connect") {
+			console.log(`Unable to connect to Discord. Is Discord running and logged-in in the background?`);
+			console.log(`Automatically retrying to connect, please wait ${discordRetryDuration} seconds...`);
+			connectToDiscord();
+		}
+	});
+} catch (e) {
+	throw e;
 }
-
-(async () => {
-	const AppWindow = new Application();
-
-	try {
-		AppWindow.startApp();
-
-		await AppWindow.setActivity();
-
-		setInterval(async () => {
-			await AppWindow.setActivity();
-		}, 15e3);
-	} catch (e) {
-		console.error(e);
-	}
-})();

@@ -55,7 +55,8 @@
 			"output": "release/"
 		},
 		"win": {
-			"target": "nsis"
+			"target": "nsis",
+			"icon": "build/favicon.ico"
 		}
 	}
 }

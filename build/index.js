@@ -8,88 +8,171 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-const path_1 = require("path");
 const electron_1 = require("electron");
+const electron_updater_1 = require("electron-updater");
 const discord_rpc_1 = require("discord-rpc");
-class Application {
-    constructor() {
-        this.startTime = new Date();
-        this.cient_reg = (0, discord_rpc_1.register)("991596821455585352");
-        this.client = new discord_rpc_1.Client({ transport: "ipc" });
+const path_1 = __importDefault(require("path"));
+let window = null;
+let client = null;
+let startTimestamp = new Date();
+let discordRetryDuration = 15;
+// Discord related
+const connectToDiscord = () => {
+    if (client) {
+        client.destroy();
     }
-    startApp() {
-        electron_1.app.whenReady().then(() => {
-            this.createWindow();
-            electron_1.app.on("activate", () => {
-                if (electron_1.BrowserWindow.getAllWindows().length === 0) {
-                    this.createWindow();
-                }
-            });
-        });
-        electron_1.app.on("window-all-closed", () => {
-            if (process.platform !== "darwin") {
-                electron_1.app.quit();
-            }
-        });
-    }
-    createWindow() {
-        this.window = new electron_1.BrowserWindow({
-            width: 800,
-            height: 600,
-            webPreferences: {
-                preload: (0, path_1.join)(__dirname, "js/preload.js"),
+    client = new discord_rpc_1.Client({
+        transport: "ipc",
+    });
+    client.on("ready", () => __awaiter(void 0, void 0, void 0, function* () {
+        var _a, _b;
+        console.log(`Successfully authorised as ${(_a = client === null || client === void 0 ? void 0 : client.user) === null || _a === void 0 ? void 0 : _a.username}#${(_b = client === null || client === void 0 ? void 0 : client.user) === null || _b === void 0 ? void 0 : _b.discriminator}`);
+        onStartup();
+    }));
+    client.once("close", () => {
+        console.error(`Connection to Discord closed. Attempting to reconnect...`);
+        console.log(`Automatically retrying to connect, please wait ${discordRetryDuration} seconds...`);
+        connectToDiscord();
+    });
+    setTimeout(() => {
+        client === null || client === void 0 ? void 0 : client.login({ clientId: "991596821455585352" });
+    }, discordRetryDuration * 1000);
+};
+const updatePresence = () => {
+    var _a, _b;
+    console.log(`Successfully updated ${(_a = client === null || client === void 0 ? void 0 : client.user) === null || _a === void 0 ? void 0 : _a.username}#${(_b = client === null || client === void 0 ? void 0 : client.user) === null || _b === void 0 ? void 0 : _b.discriminator}'s Rich Presence!`);
+    return client === null || client === void 0 ? void 0 : client.setActivity({
+        details: "Managing my community",
+        largeImageKey: "onechat",
+        largeImageText: "app.one-chat.co",
+        buttons: [
+            {
+                label: "Secure your community!",
+                url: "https://one-chat.co",
             },
-            titleBarStyle: "hidden",
-            titleBarOverlay: {
-                color: "#303030",
-                symbolColor: "#FFFFFF",
-                height: 50,
-            },
-        });
-        this.window.loadURL("http://local.discgram.us/");
-        electron_1.ipcMain.handle("dark-mode:toggle", () => {
-            if (electron_1.nativeTheme.shouldUseDarkColors) {
-                electron_1.nativeTheme.themeSource = "light";
-            }
-            else {
-                electron_1.nativeTheme.themeSource = "dark";
-            }
-            return electron_1.nativeTheme.shouldUseDarkColors;
-        });
-        electron_1.ipcMain.handle("dark-mode:system", () => {
-            electron_1.nativeTheme.themeSource = "system";
-        });
+        ],
+        startTimestamp: startTimestamp,
+        instance: true,
+    });
+};
+let initialTasks = [updatePresence], i = 0;
+const onStartup = () => {
+    initialTasks[i++]();
+    if (i < initialTasks.length) {
+        setTimeout(onStartup, 5 * 1000); // 5 seconds
     }
-    setActivity() {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (!this.client || !this.window) {
-                return;
-            }
-            this.client.once("ready", () => {
-                this.client
-                    .setActivity({
-                    startTimestamp: this.startTime,
-                    largeImageKey: "discgram",
-                    largeImageText: "Discgram",
-                    details: "Managing my community!",
-                })
-                    .then(console.log)
-                    .catch(console.error);
-            });
-        });
-    }
+};
+// Electron related
+const createWindow = () => {
+    const electronScreen = electron_1.screen;
+    const size = electronScreen.getPrimaryDisplay().workAreaSize;
+    window = new electron_1.BrowserWindow({
+        center: true,
+        width: (size.width / 3) * 2,
+        height: (size.height / 3) * 2,
+        title: "One Chat",
+        titleBarStyle: "hidden",
+        titleBarOverlay: {
+            color: "#303030",
+            symbolColor: "#FFFFFF",
+            height: 49,
+        },
+        icon: path_1.default.join(__dirname, "../favicon.ico"),
+        show: false,
+    });
+    console.log(path_1.default.join(__dirname, "favicon.ico"));
+    // production
+    //window.loadURL("https://app.one-chat.co/");
+    // dev
+    window.loadURL("http://local.one-chat.co/");
+    window.webContents.setWindowOpenHandler(({ url }) => {
+        if (url.includes("one-chat.co")) {
+            return {
+                action: "allow",
+                overrideBrowserWindowOptions: {
+                    center: true,
+                    width: (size.width / 3) * 2,
+                    height: (size.height / 3) * 2,
+                    titleBarStyle: "hidden",
+                    titleBarOverlay: {
+                        color: "#303030",
+                        symbolColor: "#FFFFFF",
+                        height: 49,
+                    },
+                    icon: path_1.default.join(__dirname, "../favicon.ico"),
+                },
+            };
+        }
+        else {
+            electron_1.shell.openExternal(url);
+            return { action: "deny" };
+        }
+    });
+    window.webContents.on("did-finish-load", () => {
+        window === null || window === void 0 ? void 0 : window.show();
+    });
+    window.on("closed", () => {
+        window = null;
+    });
+    return window;
+};
+// Check for application updates
+const checkUpdates = () => {
+    electron_updater_1.autoUpdater.checkForUpdatesAndNotify();
+    electron_updater_1.autoUpdater.on("checking-for-update", () => {
+        console.log("Checking for update...");
+    });
+    electron_updater_1.autoUpdater.on("update-available", (info) => {
+        console.log("Update available.");
+    });
+    electron_updater_1.autoUpdater.on("update-not-available", (info) => {
+        console.log("Update not available.");
+    });
+    electron_updater_1.autoUpdater.on("error", (err) => {
+        console.log("Error in auto-updater. " + err);
+    });
+    electron_updater_1.autoUpdater.on("download-progress", (progressObj) => {
+        let log_message = "Download speed: " + progressObj.bytesPerSecond;
+        log_message = log_message + " - Downloaded " + progressObj.percent + "%";
+        log_message = log_message + " (" + progressObj.transferred + "/" + progressObj.total + ")";
+        window === null || window === void 0 ? void 0 : window.setProgressBar(progressObj.percent / 100);
+        console.log(log_message);
+    });
+    electron_updater_1.autoUpdater.on("update-downloaded", (ev) => {
+        console.log("Update downloaded");
+        setTimeout(function () {
+            electron_updater_1.autoUpdater.quitAndInstall();
+        }, 5000);
+    });
+};
+try {
+    electron_1.app.on("ready", () => {
+        checkUpdates();
+        setTimeout(createWindow, 400);
+        connectToDiscord();
+    });
+    electron_1.app.on("window-all-closed", () => {
+        if (process.platform !== "darwin") {
+            electron_1.app.quit();
+        }
+    });
+    electron_1.app.on("activate", () => {
+        if (window === null) {
+            createWindow();
+        }
+    });
+    process.on("unhandledRejection", (err) => {
+        if (err.message === "Could not connect") {
+            console.log(`Unable to connect to Discord. Is Discord running and logged-in in the background?`);
+            console.log(`Automatically retrying to connect, please wait ${discordRetryDuration} seconds...`);
+            connectToDiscord();
+        }
+    });
 }
-(() => __awaiter(void 0, void 0, void 0, function* () {
-    const AppWindow = new Application();
-    try {
-        AppWindow.startApp();
-        yield AppWindow.setActivity();
-        setInterval(() => __awaiter(void 0, void 0, void 0, function* () {
-            yield AppWindow.setActivity();
-        }), 15e3);
-    }
-    catch (e) {
-        console.error(e);
-    }
-}))();
+catch (e) {
+    throw e;
+}

@@ -46,12 +46,12 @@ const updatePresence = () => {
     var _a, _b;
     console.log(`Successfully updated ${(_a = client === null || client === void 0 ? void 0 : client.user) === null || _a === void 0 ? void 0 : _a.username}#${(_b = client === null || client === void 0 ? void 0 : client.user) === null || _b === void 0 ? void 0 : _b.discriminator}'s Rich Presence!`);
     return client === null || client === void 0 ? void 0 : client.setActivity({
-        details: "Managing my community",
+        details: "Managing my business",
         largeImageKey: "onechat",
         largeImageText: "app.one-chat.co",
         buttons: [
             {
-                label: "Secure your community!",
+                label: "Secure your business!",
                 url: "https://one-chat.co",
             },
         ],

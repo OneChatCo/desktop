@@ -1,9 +1,10 @@
-import { app, screen, BrowserWindow, shell } from "electron";
+import { MicaBrowserWindow, Theme, Mica, isWindows11 } from "mica-electron-ts";
+import { app, screen, shell } from "electron";
 import { autoUpdater, UpdateDownloadedEvent } from "electron-updater";
 import { Client } from "discord-rpc";
 import path from "path";
 
-let window: BrowserWindow | null = null;
+let window: MicaBrowserWindow | null = null;
 let client: Client | null = null;
 let startTimestamp: Date = new Date();
 let discordRetryDuration: number = 15;
@@ -63,32 +64,32 @@ const onStartup = () => {
 };
 
 // Electron related
-const createWindow = (): BrowserWindow => {
+const createWindow = (): MicaBrowserWindow => {
 	const electronScreen = screen;
 	const size = electronScreen.getPrimaryDisplay().workAreaSize;
 
-	window = new BrowserWindow({
+	window = new MicaBrowserWindow({
 		center: true,
 		width: (size.width / 3) * 2,
 		height: (size.height / 3) * 2,
 		title: "One Chat",
-		titleBarStyle: "hidden",
-		titleBarOverlay: {
-			color: "#303030",
-			symbolColor: "#FFFFFF",
-			height: 49,
-		},
+		autoHideMenuBar: true,
 		icon: path.join(__dirname, "../favicon.ico"),
 		show: false,
 	});
 
-	console.log(path.join(__dirname, "favicon.ico"));
+	if (isWindows11) {
+		// Set window to use dark theme
+		window.setTheme(Theme.Dark);
+		// Set window effect to Mica
+		window.setMicaEffect(Mica.Normal);
+	}
 
 	// production
-	window.loadURL("https://app.one-chat.co/");
+	//window.loadURL("https://app.one-chat.co/");
 
 	// dev
-	//window.loadURL("http://local.one-chat.co/");
+	window.loadURL("http://local.one-chat.co/");
 
 	window.webContents.setWindowOpenHandler(({ url }) => {
 		if (url.includes("one-chat.co")) {

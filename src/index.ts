@@ -86,10 +86,10 @@ const createWindow = (): MicaBrowserWindow => {
 	}
 
 	// production
-	//window.loadURL("https://app.one-chat.co/");
+	window.loadURL("https://app.one-chat.co/");
 
 	// dev
-	window.loadURL("http://local.one-chat.co/");
+	//window.loadURL("http://local.one-chat.co/");
 
 	window.webContents.setWindowOpenHandler(({ url }) => {
 		if (url.includes("one-chat.co")) {

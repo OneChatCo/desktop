@@ -12,7 +12,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const mica_electron_ts_1 = require("mica-electron-ts");
 const electron_1 = require("electron");
 const electron_updater_1 = require("electron-updater");
 const discord_rpc_1 = require("discord-rpc");
@@ -71,23 +70,22 @@ const onStartup = () => {
 const createWindow = () => {
     const electronScreen = electron_1.screen;
     const size = electronScreen.getPrimaryDisplay().workAreaSize;
-    window = new mica_electron_ts_1.MicaBrowserWindow({
+    window = new electron_1.BrowserWindow({
         center: true,
         width: (size.width / 3) * 2,
         height: (size.height / 3) * 2,
         title: "One Chat",
-        autoHideMenuBar: true,
         icon: path_1.default.join(__dirname, "../favicon.ico"),
+        autoHideMenuBar: true,
+        transparent: true,
+        backgroundMaterial: "mica",
         show: false,
     });
-    if (mica_electron_ts_1.isWindows11) {
-        // Set window to use dark theme
-        window.setTheme(mica_electron_ts_1.Theme.Dark);
-        // Set window effect to Mica
-        window.setMicaEffect(mica_electron_ts_1.Mica.Normal);
-    }
     // production
     window.loadURL("https://app.one-chat.co/");
+    window.webContents.openDevTools({
+        mode: "detach",
+    });
     // dev
     //window.loadURL("http://local.one-chat.co/");
     window.webContents.setWindowOpenHandler(({ url }) => {
@@ -98,13 +96,9 @@ const createWindow = () => {
                     center: true,
                     width: (size.width / 3) * 2,
                     height: (size.height / 3) * 2,
-                    titleBarStyle: "hidden",
-                    titleBarOverlay: {
-                        color: "#303030",
-                        symbolColor: "#FFFFFF",
-                        height: 49,
-                    },
                     icon: path_1.default.join(__dirname, "../favicon.ico"),
+                    transparent: true,
+                    backgroundMaterial: "mica",
                 },
             };
         }

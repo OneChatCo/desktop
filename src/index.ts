@@ -71,9 +71,10 @@ const createWindow = (): BrowserWindow => {
 		center: true,
 		width: (size.width / 3) * 2,
 		height: (size.height / 3) * 2,
+		resizable: true,
 
 		title: "One Chat",
-		icon: path.join(__dirname, "../favicon.ico"),
+		icon: path.join(__dirname, "favicon.ico"),
 		autoHideMenuBar: true,
 
 		transparent: true,
@@ -83,14 +84,14 @@ const createWindow = (): BrowserWindow => {
 	});
 
 	// production
-	window.loadURL("https://app.one-chat.co/");
+	//window.loadURL("https://app.one-chat.co/");
 
 	window.webContents.openDevTools({
 		mode: "detach",
 	});
 
 	// dev
-	//window.loadURL("http://local.one-chat.co/");
+	window.loadURL("http://local.one-chat.co/");
 
 	window.webContents.setWindowOpenHandler(({ url }) => {
 		if (url.includes("one-chat.co")) {
@@ -101,7 +102,7 @@ const createWindow = (): BrowserWindow => {
 					width: (size.width / 3) * 2,
 					height: (size.height / 3) * 2,
 
-					icon: path.join(__dirname, "../favicon.ico"),
+					icon: path.join(__dirname, "favicon.ico"),
 
 					transparent: true,
 					backgroundMaterial: "mica",

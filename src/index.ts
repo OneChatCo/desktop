@@ -77,8 +77,14 @@ const createWindow = (): BrowserWindow => {
 		icon: path.join(__dirname, "favicon.ico"),
 		autoHideMenuBar: true,
 
-		transparent: true,
 		backgroundMaterial: "mica",
+
+		/*
+		transparent: true,
+		frame: false,
+		titleBarStyle: "hidden",
+		titleBarOverlay: true,
+		*/
 
 		show: false,
 	});
@@ -105,7 +111,6 @@ const createWindow = (): BrowserWindow => {
 
 					icon: path.join(__dirname, "favicon.ico"),
 
-					transparent: true,
 					backgroundMaterial: "mica",
 				},
 			};

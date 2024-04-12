@@ -78,8 +78,13 @@ const createWindow = () => {
         title: "One Chat",
         icon: path_1.default.join(__dirname, "favicon.ico"),
         autoHideMenuBar: true,
-        transparent: true,
         backgroundMaterial: "mica",
+        /*
+        transparent: true,
+        frame: false,
+        titleBarStyle: "hidden",
+        titleBarOverlay: true,
+        */
         show: false,
     });
     // production
@@ -100,7 +105,6 @@ const createWindow = () => {
                     width: (size.width / 3) * 2,
                     height: (size.height / 3) * 2,
                     icon: path_1.default.join(__dirname, "favicon.ico"),
-                    transparent: true,
                     backgroundMaterial: "mica",
                 },
             };

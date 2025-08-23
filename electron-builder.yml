@@ -1,5 +1,5 @@
 appId: com.orbitus.onechat
-productName: One Chat App
+productName: OneChatApp
 files:
   - dist/**
   - package.json

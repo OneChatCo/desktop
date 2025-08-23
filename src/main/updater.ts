@@ -17,6 +17,22 @@ export function initAutoUpdater(win: BrowserWindow) {
 	// Optional: Enable logging for debugging
 	autoUpdater.logger = console;
 
+	// Add comprehensive event logging
+	autoUpdater.on("checking-for-update", () => {
+		const msg = "AutoUpdater: Checking for update...";
+		console.log(msg);
+	});
+
+	autoUpdater.on("update-available", (info) => {
+		const msg = `AutoUpdater: Update available: ${JSON.stringify(info)}`;
+		console.log(msg);
+	});
+
+	autoUpdater.on("update-not-available", (info) => {
+		const msg = `AutoUpdater: Update not available: ${JSON.stringify(info)}`;
+		console.log(msg);
+	});
+
 	autoUpdater.on("download-progress", (progress) => {
 		// Show download progress under taskbar icon
 		win.setProgressBar(progress.percent / 100);
@@ -41,11 +57,15 @@ export function initAutoUpdater(win: BrowserWindow) {
 
 	autoUpdater.on("error", (err) => {
 		// Non-fatal; just log
-		console.error("AutoUpdater error:", err);
+		const msg = `AutoUpdater error: ${err.message}`;
+		console.error(msg);
 	});
 
 	// First check on startup
-	autoUpdater.checkForUpdatesAndNotify().catch(() => {});
+	console.log("AutoUpdater: Starting initial update check...");
+	autoUpdater.checkForUpdatesAndNotify().catch((err) => {
+		console.log(`AutoUpdater: Initial check failed: ${err.message}`);
+	});
 
 	// Periodic checks (every 6 hours)
 	setInterval(() => {

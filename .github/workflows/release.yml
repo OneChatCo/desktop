@@ -114,6 +114,8 @@ jobs:
           path: |
             dist/*.exe
             dist/*.zip
+            dist/latest.yml
+            dist/*.blockmap
 
       - name: Upload artifacts (macOS)
         if: matrix.os == 'macos-latest'
@@ -123,6 +125,8 @@ jobs:
           path: |
             dist/*.dmg
             dist/*.zip
+            dist/latest-mac.yml
+            dist/*.blockmap
 
       - name: Upload artifacts (Linux)
         if: matrix.os == 'ubuntu-latest'
@@ -132,6 +136,8 @@ jobs:
           path: |
             dist/*.AppImage
             dist/*.deb
+            dist/latest-linux.yml
+            dist/*.blockmap
 
   release:
     needs: build
@@ -198,6 +204,18 @@ jobs:
             release_files+=("artifacts/windows-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}-win.zip#OneChat-${{ steps.package-version.outputs.version }}-windows.zip")
           fi
 
+          # Add Windows metadata file for auto-updater
+          if [ -f "artifacts/windows-artifacts/latest.yml" ]; then
+            release_files+=("artifacts/windows-artifacts/latest.yml")
+          fi
+
+          # Add Windows blockmap files for differential updates
+          for blockmap in artifacts/windows-artifacts/*.blockmap; do
+            if [ -f "$blockmap" ]; then
+              release_files+=("$blockmap")
+            fi
+          done
+
           if [ -f "artifacts/macos-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}.dmg" ]; then
             release_files+=("artifacts/macos-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}.dmg#OneChat-${{ steps.package-version.outputs.version }}.dmg")
           fi
@@ -206,6 +224,18 @@ jobs:
             release_files+=("artifacts/macos-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}-mac.zip#OneChat-${{ steps.package-version.outputs.version }}-macos.zip")
           fi
 
+          # Add macOS metadata file for auto-updater
+          if [ -f "artifacts/macos-artifacts/latest-mac.yml" ]; then
+            release_files+=("artifacts/macos-artifacts/latest-mac.yml")
+          fi
+
+          # Add macOS blockmap files for differential updates
+          for blockmap in artifacts/macos-artifacts/*.blockmap; do
+            if [ -f "$blockmap" ]; then
+              release_files+=("$blockmap")
+            fi
+          done
+
           if [ -f "artifacts/linux-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}.AppImage" ]; then
             release_files+=("artifacts/linux-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}.AppImage#OneChat-${{ steps.package-version.outputs.version }}.AppImage")
           fi
@@ -213,6 +243,18 @@ jobs:
           if [ -f "artifacts/linux-artifacts/onechatapp_${{ steps.package-version.outputs.version }}_amd64.deb" ]; then
             release_files+=("artifacts/linux-artifacts/onechatapp_${{ steps.package-version.outputs.version }}_amd64.deb#OneChat-${{ steps.package-version.outputs.version }}.deb")
           fi
+
+          # Add Linux metadata file for auto-updater
+          if [ -f "artifacts/linux-artifacts/latest-linux.yml" ]; then
+            release_files+=("artifacts/linux-artifacts/latest-linux.yml")
+          fi
+
+          # Add Linux blockmap files for differential updates
+          for blockmap in artifacts/linux-artifacts/*.blockmap; do
+            if [ -f "$blockmap" ]; then
+              release_files+=("$blockmap")
+            fi
+          done
 
           # Create the release
           echo "Creating release v${{ steps.package-version.outputs.version }}-${{ github.run_number }} with ${#release_files[@]} assets"

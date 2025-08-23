@@ -159,98 +159,58 @@ jobs:
           path: artifacts
 
       - name: Display structure of downloaded files
-        run: ls -la artifacts/
+        run: |
+          ls -la artifacts/
+          echo "Windows artifacts:"
+          ls -la artifacts/windows-artifacts/ || echo "No windows artifacts found"
+          echo "macOS artifacts:"
+          ls -la artifacts/macos-artifacts/ || echo "No macOS artifacts found"
+          echo "Linux artifacts:"
+          ls -la artifacts/linux-artifacts/ || echo "No Linux artifacts found"
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
+      - name: Create Release and Upload Assets
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ steps.package-version.outputs.version }}-${{ github.run_number }}
-          release_name: Release v${{ steps.package-version.outputs.version }}-${{ github.run_number }}
-          body: |
-            Auto-generated release from commit ${{ github.sha }}
+        run: |
+          # Create release
+          release_args="v${{ steps.package-version.outputs.version }}-${{ github.run_number }}"
+          release_args="$release_args --title \"Release v${{ steps.package-version.outputs.version }}-${{ github.run_number }}\""
+          release_args="$release_args --notes \"Auto-generated release from commit ${{ github.sha }}
 
-            ## Changes
-            - Latest changes from commit: ${{ github.event.head_commit.message }}
+          ## Changes
+          - Latest changes from commit: ${{ github.event.head_commit.message }}
 
-            ## Downloads
-            Choose the appropriate version for your operating system:
-            - **Windows**: `.exe` (installer) or `.zip` (portable)
-            - **macOS**: `.dmg` (installer) or `.zip` (portable)  
-            - **Linux**: `.AppImage` (portable) or `.deb` (Debian/Ubuntu)
-          draft: false
-          prerelease: false
+          ## Downloads
+          Choose the appropriate version for your operating system:
+          - **Windows**: \`.exe\` (installer) or \\.zip\` (portable)
+          - **macOS**: \`.dmg\` (installer) or \\.zip\` (portable)  
+          - **Linux**: \`.AppImage\` (portable) or \\.deb\` (Debian/Ubuntu)\""
+          release_args="$release_args --draft=false --prerelease=false"
 
-      - name: Upload Windows NSIS installer
-        if: always()
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/windows-artifacts/One Chat App Setup ${{ steps.package-version.outputs.version }}.exe
-          asset_name: OneChat-Setup-${{ steps.package-version.outputs.version }}.exe
-          asset_content_type: application/octet-stream
-        continue-on-error: true
+          # Add available assets
+          if [ -f "artifacts/windows-artifacts/OneChatApp Setup ${{ steps.package-version.outputs.version }}.exe" ]; then
+            release_args="$release_args \"artifacts/windows-artifacts/OneChatApp Setup ${{ steps.package-version.outputs.version }}.exe#OneChat-Setup-${{ steps.package-version.outputs.version }}.exe\""
+          fi
 
-      - name: Upload Windows ZIP
-        if: always()
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/windows-artifacts/One Chat App-${{ steps.package-version.outputs.version }}-win.zip
-          asset_name: OneChat-${{ steps.package-version.outputs.version }}-windows.zip
-          asset_content_type: application/zip
-        continue-on-error: true
+          if [ -f "artifacts/windows-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}-win.zip" ]; then
+            release_args="$release_args \"artifacts/windows-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}-win.zip#OneChat-${{ steps.package-version.outputs.version }}-windows.zip\""
+          fi
 
-      - name: Upload macOS DMG
-        if: always()
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/macos-artifacts/One Chat App-${{ steps.package-version.outputs.version }}.dmg
-          asset_name: OneChat-${{ steps.package-version.outputs.version }}.dmg
-          asset_content_type: application/octet-stream
-        continue-on-error: true
+          if [ -f "artifacts/macos-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}.dmg" ]; then
+            release_args="$release_args \"artifacts/macos-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}.dmg#OneChat-${{ steps.package-version.outputs.version }}.dmg\""
+          fi
 
-      - name: Upload macOS ZIP
-        if: always()
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/macos-artifacts/One Chat App-${{ steps.package-version.outputs.version }}-mac.zip
-          asset_name: OneChat-${{ steps.package-version.outputs.version }}-macos.zip
-          asset_content_type: application/zip
-        continue-on-error: true
+          if [ -f "artifacts/macos-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}-mac.zip" ]; then
+            release_args="$release_args \"artifacts/macos-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}-mac.zip#OneChat-${{ steps.package-version.outputs.version }}-macos.zip\""
+          fi
 
-      - name: Upload Linux AppImage
-        if: always()
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/linux-artifacts/One Chat App-${{ steps.package-version.outputs.version }}.AppImage
-          asset_name: OneChat-${{ steps.package-version.outputs.version }}.AppImage
-          asset_content_type: application/octet-stream
-        continue-on-error: true
+          if [ -f "artifacts/linux-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}.AppImage" ]; then
+            release_args="$release_args \"artifacts/linux-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}.AppImage#OneChat-${{ steps.package-version.outputs.version }}.AppImage\""
+          fi
 
-      - name: Upload Linux DEB
-        if: always()
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: artifacts/linux-artifacts/one-chat-app_${{ steps.package-version.outputs.version }}_amd64.deb
-          asset_name: OneChat-${{ steps.package-version.outputs.version }}.deb
-          asset_content_type: application/vnd.debian.binary-package
-        continue-on-error: true
+          if [ -f "artifacts/linux-artifacts/onechatapp_${{ steps.package-version.outputs.version }}_amd64.deb" ]; then
+            release_args="$release_args \"artifacts/linux-artifacts/onechatapp_${{ steps.package-version.outputs.version }}_amd64.deb#OneChat-${{ steps.package-version.outputs.version }}.deb\""
+          fi
+
+          echo "Creating release with command: gh release create $release_args"
+          eval "gh release create $release_args"

@@ -4,7 +4,7 @@
 	"private": true,
 	"description": "One Chat desktop shell with tabs and auto-updater",
 	"main": "dist/main/main.js",
-	"author": "Ganni",
+	"author": "Ganni <gannicus@orbitus.ca> (https://onech.at/)",
 	"license": "MIT",
 	"scripts": {
 		"clean": "rimraf dist",

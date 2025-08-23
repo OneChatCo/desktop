@@ -257,10 +257,10 @@ jobs:
           done
 
           # Create the release
-          echo "Creating release v${{ steps.package-version.outputs.version }}-${{ github.run_number }} with ${#release_files[@]} assets"
+          echo "Creating release v${{ steps.package-version.outputs.version }} with ${#release_files[@]} assets"
 
-          gh release create "v${{ steps.package-version.outputs.version }}-${{ github.run_number }}" \
-            --title "Release v${{ steps.package-version.outputs.version }}-${{ github.run_number }}" \
+          gh release create "v${{ steps.package-version.outputs.version }}" \
+            --title "Release v${{ steps.package-version.outputs.version }}" \
             --notes-file release_notes.md \
             --draft=false \
             --prerelease=false \

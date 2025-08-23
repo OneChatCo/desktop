@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<link rel="stylesheet" href="./app.css" />
+		<style>
+			:root {
+				--bg: rgba(12, 16, 26, 0.72);
+				--border: rgba(255, 255, 255, 0.08);
+				--hover: rgba(255, 255, 255, 0.1);
+				--rad: 12px;
+			}
+			html,
+			body {
+				height: 100%;
+			}
+
+			body {
+				padding-top: 0 !important;
+				margin: 0;
+				background: transparent;
+				color: #e9edf5;
+				font: 13px/1.25 ui-sans-serif, system-ui, Segoe UI, Roboto, Arial;
+				-webkit-user-select: none;
+			}
+			.shell {
+				display: block; /* ← shrink to content */
+				position: relative;
+				padding: 6px;
+				overflow: hidden;
+				background: rgba(12, 16, 26, 0.85);
+				border: 1px solid rgba(255, 255, 255, 0.08);
+				width: 100%;
+			}
+			.shell.measure {
+				animation: none !important;
+				opacity: 1;
+				transform: none;
+			}
+			.shell.limited .list {
+				overflow-y: auto;
+				max-height: var(--limit, 360px);
+			}
+
+			/* No extra gap here so our math is exact */
+			.list {
+				display: flex;
+				flex-direction: column;
+			}
+
+			.item {
+				display: flex;
+				align-items: center;
+				gap: 10px;
+				height: 32px;
+				padding: 0 10px;
+				border-radius: 8px;
+				cursor: pointer;
+				background: transparent;
+				transition: background 0.2s ease;
+				will-change: background;
+			}
+			.item:hover {
+				background: var(--hover);
+			}
+			.item[aria-disabled="true"] {
+				opacity: 0.45;
+				pointer-events: none;
+			}
+
+			.sep {
+				height: 1px;
+				margin: 6px 4px;
+				background: var(--border);
+			} /* 1 + 12 = 13px total */
+
+			.label {
+				flex: 1 1 auto;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
+
+			/* If too tall, allow internal scroll — works with MAX_H logic */
+			.list {
+				max-height: calc(100% - 0px);
+				overflow-y: auto;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="shell">
+			<div class="list" id="menu"></div>
+		</div>
+
+		<script>
+			const shell = document.querySelector(".shell");
+			const list = document.getElementById("menu");
+			let lastTicket = 0;
+
+			function render({ ticket, items }) {
+				lastTicket = ticket;
+				shell.classList.add("measure");
+				list.innerHTML = "";
+
+				for (const it of items) {
+					if (it.id === "sep") {
+						const s = document.createElement("div");
+						s.className = "sep";
+						list.appendChild(s);
+						continue;
+					}
+					const el = document.createElement("div");
+					el.className = "item";
+					el.setAttribute("aria-disabled", it.enabled === false ? "true" : "false");
+					el.innerHTML = `<div class="label">${it.label}</div>`;
+					el.addEventListener("click", () => window.ctxmenu.select(lastTicket, it.id));
+					list.appendChild(el);
+				}
+
+				// force layout, measure the whole shell
+				shell.getBoundingClientRect(); // reflow
+				const h = Math.ceil(shell.offsetHeight);
+				window.ctxmenu.measured(ticket, h);
+			}
+
+			window.ctxmenu.onData(render);
+			window.ctxmenu.onGo((ticket) => {
+				if (ticket === lastTicket) shell.classList.remove("measure");
+			});
+
+			// optional: main can tell us to clamp internally (see step 3)
+			window.ctxmenu?.onLimit?.((px) => {
+				shell.style.setProperty("--limit", px + "px");
+				shell.classList.add("limited");
+			});
+
+			window.addEventListener("keydown", (e) => {
+				if (e.key === "Escape") window.ctxmenu.close();
+			});
+			window.addEventListener("contextmenu", (e) => e.preventDefault());
+			window.addEventListener("blur", () => window.ctxmenu.close());
+		</script>
+	</body>
+</html>

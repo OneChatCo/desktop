@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta
+			http-equiv="Content-Security-Policy"
+			content="default-src 'self'; img-src 'self' https://* data:; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:;"
+		/>
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>One Chat</title>
+		<link rel="icon" type="image/png" href="./icon.png" />
+		<link rel="stylesheet" href="./app.css" />
+	</head>
+	<body>
+		<!-- Titlebar: icon + tabs + new tab -->
+		<div class="titlebar">
+			<!-- app icon only (no background) -->
+			<img id="appIcon" alt="One Chat" src="./icon.png" class="app-icon" />
+
+			<!-- tabs -->
+			<div class="tabs-wrap">
+				<div class="tabs" id="tabs"></div>
+			</div>
+
+			<!-- new tab button at the end -->
+			<div class="plus" id="newTab" title="New Tab (Ctrl/Cmd+T)">＋</div>
+
+			<!-- title bar overlay border -->
+			<div class="titlebar-overlay-border"></div>
+
+			<!-- spacer for OS window controls -->
+			<div class="right-spacer"></div>
+		</div>
+
+		<!-- Toolbar under the tabs: back / forward / refresh / address -->
+		<div class="toolbar">
+			<button class="tool-btn" id="back" title="Back" aria-label="Back">
+				<!-- chevron-left (lucide) -->
+				<svg
+					viewBox="0 0 24 24"
+					width="18"
+					height="18"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
+					<polyline points="15 18 9 12 15 6" />
+				</svg>
+			</button>
+			<button class="tool-btn" id="forward" title="Forward" aria-label="Forward">
+				<!-- chevron-right -->
+				<svg
+					viewBox="0 0 24 24"
+					width="18"
+					height="18"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
+					<polyline points="9 18 15 12 9 6" />
+				</svg>
+			</button>
+			<button class="tool-btn" id="reload" title="Reload" aria-label="Reload">
+				<!-- rotate-cw -->
+				<svg
+					viewBox="0 0 24 24"
+					width="18"
+					height="18"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
+					<polyline points="23 4 23 10 17 10" />
+					<path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+				</svg>
+			</button>
+
+			<div class="address-wrap">
+				<input id="address" type="text" spellcheck="false" placeholder="https://app.one-chat.co" />
+			</div>
+		</div>
+
+		<script src="./renderer.js"></script>
+	</body>
+</html>

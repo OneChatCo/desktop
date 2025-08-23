@@ -1,0 +1,389 @@
+@import "tailwindcss";
+
+/* Tokens */
+@theme {
+	--color-base: #0a0d14;
+	--color-pane: #0d1220;
+	--color-tab: #461637; /* dark magenta */
+	--color-tab-h: #6a1f54; /* hover magenta */
+	--ink: #e9edf5;
+	--muted: #9fb0c7;
+	--neon: #ff28a7;
+	--cyan: #00f5ff;
+}
+
+::selection {
+	background-color: transparent;
+	color: inherit;
+}
+
+/* Layout heights (BrowserView offset uses both rows) */
+:root {
+	--title-h: 53px;
+	--toolbar-h: 40px;
+	--overlay-h: calc(var(--title-h) + var(--toolbar-h));
+}
+html,
+body {
+	height: 100%;
+}
+body {
+	padding-top: var(--overlay-h);
+	background: var(--color-base);
+	background: transparent !important;
+	color: var(--ink);
+}
+
+/* ===== Titlebar (row 1) ===== */
+.titlebar {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: var(--title-h);
+	z-index: 30;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 8px 10px;
+	-webkit-app-region: drag;
+	background: linear-gradient(180deg, rgba(0, 0, 0, 0.78), rgba(10, 13, 20, 0.6));
+	border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+	backdrop-filter: blur(18px) saturate(140%);
+}
+.app-icon {
+	width: 24px;
+	height: 24px;
+	-webkit-app-region: no-drag;
+	user-select: none;
+}
+
+/* Tabs rail */
+.tabs-wrap {
+	position: relative;
+	flex: 1;
+	min-width: 0;
+	-webkit-app-region: no-drag;
+}
+.tabs {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	height: 32px;
+	overflow-x: auto;
+	overflow-y: hidden;
+	scroll-behavior: smooth;
+	mask-image: linear-gradient(to left, transparent, #000 24px);
+	-webkit-app-region: drag;
+}
+.tabs::-webkit-scrollbar {
+	height: 0px;
+}
+.tabs::-webkit-scrollbar-thumb {
+	background: transparent;
+}
+
+/* Tab chip — 3px radius, 12px text, max 250px */
+.tab {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: 5px;
+	height: 28px;
+	padding: 0 8px;
+	border-radius: 5px;
+	cursor: pointer;
+	user-select: none;
+	background: var(--color-tab);
+	color: rgba(255, 255, 255, 0.75);
+	transition: background 0.15s ease, color 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+	font-size: 12px;
+	line-height: 1;
+	-webkit-app-region: no-drag;
+	width: 200px;
+	overflow: hidden;
+}
+.tab:hover {
+	background: var(--color-tab-h);
+	color: #fff;
+}
+.tab.active {
+	background: color-mix(in oklab, var(--color-tab-h) 85%, var(--cyan));
+	border-color: rgba(255, 255, 255, 0.12);
+	color: #fff;
+	box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) inset, 0 8px 22px rgba(0, 0, 0, 0.35);
+}
+
+/* Smooth tab mount/unmount */
+@keyframes tabIn {
+	from {
+		opacity: 0;
+		transform: translateY(6px) scale(0.98);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+}
+@keyframes tabOut {
+	to {
+		opacity: 0;
+		transform: translateY(6px) scale(0.98);
+	}
+}
+
+.tab--enter {
+	animation: tabIn 140ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.tabs .tab.tab--exit {
+	animation: tabOut 140ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+	pointer-events: none;
+	will-change: opacity, transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.tab--enter,
+	.tab--exit {
+		animation: none !important;
+	}
+}
+
+.tab .fav {
+	width: 16px;
+	height: 16px;
+	border-radius: 2px;
+	flex: 0 0 auto;
+	background-size: cover; /* or 'contain' if you prefer */
+	background-position: center;
+	background-repeat: no-repeat;
+	overflow: hidden;
+}
+
+/* Title with fade-to-X (close) */
+.tab {
+	--fade-start: 88%;
+}
+.tab:hover {
+	--fade-start: 65%;
+}
+.tab:hover .title .tt {
+	mask-image: linear-gradient(to right, #000 0%, transparent 90%) !important;
+}
+.tab .title {
+	font-weight: 600;
+	letter-spacing: 0.01em;
+	flex: 1 1 auto;
+	white-space: nowrap;
+	text-overflow: clip;
+	position: relative;
+	padding-right: 18px;
+	padding: 9px 0;
+	transition: 100ms mask-image linear;
+}
+@keyframes ttlIn {
+	from {
+		opacity: 0;
+		transform: translateY(6px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+@keyframes ttlOut {
+	to {
+		opacity: 0;
+		transform: translateY(-6px);
+	}
+}
+.tab .title {
+	display: block;
+	height: 1em; /* lock height for 12px text */
+	line-height: 1;
+}
+.tab .title .tt {
+	position: absolute;
+	inset: 0;
+	white-space: nowrap;
+	text-overflow: clip;
+	-webkit-mask-image: linear-gradient(to left, transparent, #000 24px);
+	mask-image: linear-gradient(to left, transparent, #000 24px);
+	padding: 2px 0;
+}
+.tab .title .tt-enter {
+	animation: ttlIn 140ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+.tab .title .tt-leave {
+	animation: ttlOut 140ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.tab .title .tt-enter,
+	.tab .title .tt-leave {
+		animation: none !important;
+	}
+}
+
+/* Close button only on hover */
+.tab .close {
+	width: 18px;
+	height: 18px;
+	display: grid;
+	place-items: center;
+	border-radius: 3px;
+	color: rgba(255, 255, 255, 0.9);
+	position: absolute;
+	right: 4px;
+	top: 50%;
+	transform: translateY(-50%);
+	opacity: 0;
+	transition: opacity 0.12s ease, background 0.12s ease;
+}
+.tab:hover .close {
+	opacity: 1;
+}
+.tab .close:hover {
+	background: rgba(255, 255, 255, 0.12);
+}
+
+/* Tabs area is a window drag region by default */
+.tabs {
+	-webkit-app-region: drag;
+}
+
+/* Individual tabs are interactive */
+.tab {
+	-webkit-app-region: no-drag;
+}
+
+/* While reordering, turn OFF window-drag for the rail */
+.tabs.reordering,
+.tabs.reordering * {
+	-webkit-app-region: no-drag !important;
+}
+
+/* Performance optimizations during reordering */
+.tabs.reordering .tab {
+	will-change: transform;
+	backface-visibility: hidden;
+	perspective: 1000px;
+}
+
+/* Small feel improvements */
+.tab.dragging {
+	z-index: 2;
+	transition: none !important;
+	cursor: grabbing;
+	will-change: transform;
+	transform-origin: center;
+	backface-visibility: hidden;
+	perspective: 1000px;
+}
+
+/* Prevent text selection during reordering */
+.noselect,
+.noselect * {
+	user-select: none !important;
+	-webkit-user-select: none !important;
+}
+
+/* New tab button (same style as tab, 3px radius) */
+.plus {
+	width: 28px;
+	height: 28px;
+	display: grid;
+	place-items: center;
+	border-radius: 3px;
+	color: rgba(255, 255, 255, 0.85);
+	cursor: pointer;
+	background: var(--color-tab);
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	transition: background 0.15s ease, color 0.12s ease, transform 0.06s ease;
+	-webkit-app-region: no-drag;
+	margin-right: 8px;
+}
+.plus:hover {
+	background: var(--color-tab-h);
+	color: #fff;
+}
+.plus:active {
+	transform: translateY(1px);
+}
+
+.titlebar-overlay-border {
+	position: absolute;
+	right: 137px;
+	height: 100%;
+	border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.right-spacer {
+	width: 120px;
+	opacity: 0;
+	flex: 0 0 auto;
+}
+
+/* ===== Toolbar (row 2) ===== */
+.toolbar {
+	position: fixed;
+	top: var(--title-h);
+	left: 0;
+	right: 0;
+	height: var(--toolbar-h);
+	z-index: 25;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 10px;
+	-webkit-app-region: no-drag;
+	background: linear-gradient(180deg, rgba(10, 13, 7, 1), rgba(10, 13, 20, 0.6));
+	border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+.tool-btn {
+	width: 30px;
+	height: 30px;
+	display: grid;
+	place-items: center;
+	border-radius: 6px;
+	color: #dbe3ee;
+	cursor: pointer;
+	background: rgba(255, 255, 255, 0.06);
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	transition: background 0.12s ease, transform 0.06s ease, color 0.12s ease;
+}
+.tool-btn:hover {
+	background: rgba(255, 255, 255, 0.12);
+	color: #fff;
+}
+.tool-btn:active {
+	transform: translateY(1px);
+}
+
+.address-wrap {
+	flex: 1 1 auto;
+	min-width: 240px;
+	display: flex;
+}
+.address-wrap input {
+	width: 100%;
+	height: 30px;
+	border-radius: 8px;
+	padding: 0 10px;
+	background: #0f1626;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	color: #eaf2ff;
+	font-size: 12.5px;
+	outline: none;
+	transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.address-wrap input::placeholder {
+	color: #9fb0c7;
+	opacity: 0.75;
+}
+.address-wrap input:focus {
+	border-color: color-mix(in oklab, var(--neon) 55%, transparent);
+	box-shadow: 0 0 0 3px color-mix(in oklab, var(--neon) 22%, transparent);
+}

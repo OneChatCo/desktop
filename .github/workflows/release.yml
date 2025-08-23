@@ -32,12 +32,13 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Configure Windows build tools
+      - name: Configure Windows environment
         if: matrix.os == 'windows-latest'
         run: |
-          npm config set cache C:\npm-cache
-          npm config set target_platform win32
-          npm config set target_arch x64
+          # Create cache directory
+          New-Item -ItemType Directory -Force -Path "C:\npm-cache" | Out-Null
+          New-Item -ItemType Directory -Force -Path "C:\electron-cache" | Out-Null
+        shell: pwsh
 
       - name: Clean npm cache
         run: npm cache clean --force
@@ -47,6 +48,7 @@ jobs:
         run: |
           npm install --no-audit --no-fund --legacy-peer-deps
         env:
+          npm_config_cache: C:\npm-cache
           ELECTRON_CACHE: C:\electron-cache
 
       - name: Install dependencies (Non-Windows)
@@ -91,6 +93,8 @@ jobs:
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          npm_config_cache: C:\npm-cache
+          ELECTRON_CACHE: C:\electron-cache
 
       - name: Build application (Non-Windows)
         if: matrix.os != 'windows-latest'

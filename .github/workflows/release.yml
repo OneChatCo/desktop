@@ -32,11 +32,12 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Configure npm (Windows)
+      - name: Configure Windows build tools
         if: matrix.os == 'windows-latest'
         run: |
-          npm config set msvs_version 2022
-          npm config set python python3.11
+          npm config set cache C:\npm-cache
+          npm config set target_platform win32
+          npm config set target_arch x64
 
       - name: Clean npm cache
         run: npm cache clean --force
@@ -46,7 +47,6 @@ jobs:
         run: |
           npm install --no-audit --no-fund --legacy-peer-deps
         env:
-          npm_config_cache: C:\npm-cache
           ELECTRON_CACHE: C:\electron-cache
 
       - name: Install dependencies (Non-Windows)
@@ -55,8 +55,40 @@ jobs:
 
       - name: Build application and Electron app (Windows)
         if: matrix.os == 'windows-latest'
-        run: .\build-windows.bat
-        shell: cmd
+        run: |
+          # Set environment variables
+          $env:ELECTRON_CACHE = "C:\electron-cache"
+          $env:CSC_IDENTITY_AUTO_DISCOVERY = "false"
+
+          # Create cache directory
+          New-Item -ItemType Directory -Force -Path "C:\electron-cache" | Out-Null
+
+          # Kill any running node processes
+          Get-Process -Name "node" -ErrorAction SilentlyContinue | Stop-Process -Force
+          Start-Sleep -Seconds 2
+
+          # Clean previous build
+          if (Test-Path "dist") { Remove-Item -Recurse -Force "dist" }
+
+          # Build application
+          Write-Host "Building TypeScript..."
+          npx tsc -p tsconfig.json
+          if ($LASTEXITCODE -ne 0) { throw "TypeScript build failed" }
+
+          Write-Host "Copying assets..."
+          npm run copy:assets
+          if ($LASTEXITCODE -ne 0) { throw "Asset copy failed" }
+
+          Write-Host "Building CSS..."
+          npm run tailwind:build
+          if ($LASTEXITCODE -ne 0) { throw "CSS build failed" }
+
+          Write-Host "Building Electron app..."
+          npx electron-builder --win
+          if ($LASTEXITCODE -ne 0) { throw "Electron build failed" }
+
+          Write-Host "Build completed successfully!"
+        shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -69,14 +101,6 @@ jobs:
         run: npm run dist
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Cleanup node_modules (Windows)
-        if: matrix.os == 'windows-latest'
-        run: |
-          taskkill /f /im node.exe 2>nul || true
-          timeout /t 2 /nobreak >nul
-          if exist node_modules rmdir /s /q node_modules 2>nul || true
-        continue-on-error: true
 
       - name: Upload artifacts (Windows)
         if: matrix.os == 'windows-latest'

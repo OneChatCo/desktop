@@ -4,12 +4,10 @@ setlocal enabledelayedexpansion
 echo Starting Windows build process...
 
 REM Set environment variables
-set npm_config_cache=C:\npm-cache
 set ELECTRON_CACHE=C:\electron-cache
 set CSC_IDENTITY_AUTO_DISCOVERY=false
 
 REM Create cache directories
-if not exist "C:\npm-cache" mkdir "C:\npm-cache"
 if not exist "C:\electron-cache" mkdir "C:\electron-cache"
 
 REM Kill any running node processes

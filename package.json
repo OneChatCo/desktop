@@ -1,64 +1,42 @@
 {
-	"name": "download.one-chat.co",
-	"version": "1.1.3",
-	"description": "One Chat at its core is built with the intention to bridge the communication gap between platforms within a community, thus creating a gateway for members limited by their geographic location, hardware or other impediments. With an abundance of addons, communities can tailor their channels based on their needs, and their members.",
-	"main": "build/index.js",
+	"name": "desktop",
+	"version": "2.0.0",
+	"private": true,
+	"description": "One Chat desktop shell with tabs and auto-updater",
+	"main": "dist/main/main.js",
+	"author": "Ganni",
+	"license": "MIT",
 	"scripts": {
-		"build": "tsc",
-		"watch": "tsc -w",
-		"lint": "eslint -c .eslintrc --ext .ts ./src",
-		"start": "npm run build && electron ./build/index.js",
+		"clean": "rimraf dist",
+		"copy:assets": "copyfiles -u 2 \"src/renderer/*.html\" \"src/renderer/icon.png\" dist/renderer && copyfiles \"build/*\" dist/",
+		"watch:html": "chokidar \"src/renderer/index.html\" -c \"npm run copy:html\"",
+		"tailwind:build": "tailwindcss -i ./src/renderer/styles.css -o ./dist/renderer/app.css",
+		"tailwind:watch": "tailwindcss -i ./src/renderer/styles.css -o ./dist/renderer/app.css --watch",
+		"build": "npm run clean && tsc -p tsconfig.json && npm run copy:assets && npm run tailwind:build",
+		"dev": "concurrently -k \"tsc -w\" \"npm:watch:html\" \"npm:tailwind:watch\" \"wait-on dist/main/main.js dist/preload/index.js dist/renderer/renderer.js dist/renderer/index.html dist/renderer/app.css && electron .\"",
+		"start": "electron .",
 		"pack": "electron-builder --dir",
-		"dist": "npm run build && electron-builder --win -p always"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/OneChatCo/download.one-chat.co.git"
-	},
-	"keywords": [],
-	"author": "Ganni <gannicus@orbitus.ca>",
-	"license": "ISC",
-	"bugs": {
-		"url": "https://github.com/OneChatCo/download.one-chat.co/issues"
-	},
-	"homepage": "https://github.com/OneChatCo/download.one-chat.co#readme",
-	"devDependencies": {
-		"@electron/rebuild": "^3.6.0",
-		"@types/discord-rpc": "^4.0.3",
-		"@types/node": "^20.8.2",
-		"@typescript-eslint/eslint-plugin": "^5.47.1",
-		"@typescript-eslint/parser": "^5.47.1",
-		"electron": "^29.3.0",
-		"electron-builder": "^24.13.3",
-		"electron-rebuild": "^3.2.9",
-		"eslint": "^8.50.0",
-		"ts-node": "^10.9.2",
-		"typescript": "^5.4.5"
+		"dist": "electron-builder"
 	},
 	"dependencies": {
 		"discord-rpc": "^4.0.1",
-		"electron-updater": "^6.1.4"
+		"electron-updater": "^6.6.2"
 	},
-	"build": {
-		"files": [
-			"build/**/*"
-		],
-		"publish": [
-			{
-				"provider": "github",
-				"owner": "OneChatCo",
-				"repo": "download.one-chat.co",
-				"channel": "latest"
-			}
-		],
-		"appId": "com.orbitus.onechat",
-		"productName": "One Chat",
-		"directories": {
-			"output": "release/"
-		},
-		"win": {
-			"target": "msi",
-			"icon": "favicon.ico"
-		}
+	"devDependencies": {
+		"@tailwindcss/cli": "^4.1.12",
+		"@tailwindcss/postcss": "^4.1.12",
+		"@types/discord-rpc": "^4.0.9",
+		"autoprefixer": "^10.4.21",
+		"chokidar-cli": "^3.0.0",
+		"concurrently": "^9.0.1",
+		"copyfiles": "^2.4.1",
+		"electron": "^37.3.1",
+		"electron-builder": "^26.0.12",
+		"postcss": "^8.5.6",
+		"rimraf": "^6.0.1",
+		"tailwindcss": "^4.1.12",
+		"ts-node": "^10.9.2",
+		"typescript": "^5.9.2",
+		"wait-on": "^8.0.4"
 	}
 }

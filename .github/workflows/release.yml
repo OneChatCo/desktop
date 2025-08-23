@@ -1,0 +1,185 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest, windows-latest]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build
+
+      - name: Build Electron app
+        run: npm run dist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifacts (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-artifacts
+          path: |
+            dist/*.exe
+            dist/*.zip
+
+      - name: Upload artifacts (macOS)
+        if: matrix.os == 'macos-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-artifacts
+          path: |
+            dist/*.dmg
+            dist/*.zip
+
+      - name: Upload artifacts (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-artifacts
+          path: |
+            dist/*.AppImage
+            dist/*.deb
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Get package version
+        id: package-version
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Display structure of downloaded files
+        run: ls -la artifacts/
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.package-version.outputs.version }}-${{ github.run_number }}
+          release_name: Release v${{ steps.package-version.outputs.version }}-${{ github.run_number }}
+          body: |
+            Auto-generated release from commit ${{ github.sha }}
+
+            ## Changes
+            - Latest changes from commit: ${{ github.event.head_commit.message }}
+
+            ## Downloads
+            Choose the appropriate version for your operating system:
+            - **Windows**: `.exe` (installer) or `.zip` (portable)
+            - **macOS**: `.dmg` (installer) or `.zip` (portable)  
+            - **Linux**: `.AppImage` (portable) or `.deb` (Debian/Ubuntu)
+          draft: false
+          prerelease: false
+
+      - name: Upload Windows NSIS installer
+        if: always()
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: artifacts/windows-artifacts/One Chat App Setup ${{ steps.package-version.outputs.version }}.exe
+          asset_name: OneChat-Setup-${{ steps.package-version.outputs.version }}.exe
+          asset_content_type: application/octet-stream
+        continue-on-error: true
+
+      - name: Upload Windows ZIP
+        if: always()
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: artifacts/windows-artifacts/One Chat App-${{ steps.package-version.outputs.version }}-win.zip
+          asset_name: OneChat-${{ steps.package-version.outputs.version }}-windows.zip
+          asset_content_type: application/zip
+        continue-on-error: true
+
+      - name: Upload macOS DMG
+        if: always()
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: artifacts/macos-artifacts/One Chat App-${{ steps.package-version.outputs.version }}.dmg
+          asset_name: OneChat-${{ steps.package-version.outputs.version }}.dmg
+          asset_content_type: application/octet-stream
+        continue-on-error: true
+
+      - name: Upload macOS ZIP
+        if: always()
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: artifacts/macos-artifacts/One Chat App-${{ steps.package-version.outputs.version }}-mac.zip
+          asset_name: OneChat-${{ steps.package-version.outputs.version }}-macos.zip
+          asset_content_type: application/zip
+        continue-on-error: true
+
+      - name: Upload Linux AppImage
+        if: always()
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: artifacts/linux-artifacts/One Chat App-${{ steps.package-version.outputs.version }}.AppImage
+          asset_name: OneChat-${{ steps.package-version.outputs.version }}.AppImage
+          asset_content_type: application/octet-stream
+        continue-on-error: true
+
+      - name: Upload Linux DEB
+        if: always()
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: artifacts/linux-artifacts/one-chat-app_${{ steps.package-version.outputs.version }}_amd64.deb
+          asset_name: OneChat-${{ steps.package-version.outputs.version }}.deb
+          asset_content_type: application/vnd.debian.binary-package
+        continue-on-error: true

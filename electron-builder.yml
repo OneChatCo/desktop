@@ -25,7 +25,7 @@ win:
       arch:
         - x64
   requestedExecutionLevel: asInvoker
-  sign: false
+  forceCodeSigning: false
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true

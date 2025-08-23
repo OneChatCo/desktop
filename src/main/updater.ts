@@ -2,8 +2,20 @@ import { autoUpdater } from "electron-updater";
 import { BrowserWindow, dialog } from "electron";
 
 export function initAutoUpdater(win: BrowserWindow) {
+	autoUpdater.setFeedURL({
+		provider: "github",
+		owner: "OneChatCo",
+		repo: "desktop",
+	});
+
 	// Optional: auto-download; prompt on ready
 	autoUpdater.autoDownload = true;
+
+	// Optional: Check for pre-release versions
+	// autoUpdater.allowPrerelease = false;
+
+	// Optional: Enable logging for debugging
+	autoUpdater.logger = console;
 
 	autoUpdater.on("download-progress", (progress) => {
 		// Show download progress under taskbar icon

@@ -172,45 +172,54 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Create release
-          release_args="v${{ steps.package-version.outputs.version }}-${{ github.run_number }}"
-          release_args="$release_args --title \"Release v${{ steps.package-version.outputs.version }}-${{ github.run_number }}\""
-          release_args="$release_args --notes \"Auto-generated release from commit ${{ github.sha }}
+          # Create release notes file
+          cat > release_notes.md << 'EOF'
+          Auto-generated release from commit ${{ github.sha }}
 
           ## Changes
           - Latest changes from commit: ${{ github.event.head_commit.message }}
 
           ## Downloads
           Choose the appropriate version for your operating system:
-          - **Windows**: \`.exe\` (installer) or \\.zip\` (portable)
-          - **macOS**: \`.dmg\` (installer) or \\.zip\` (portable)  
-          - **Linux**: \`.AppImage\` (portable) or \\.deb\` (Debian/Ubuntu)\""
-          release_args="$release_args --draft=false --prerelease=false"
+          - **Windows**: `.exe` (installer) or `.zip` (portable)
+          - **macOS**: `.dmg` (installer) or `.zip` (portable)  
+          - **Linux**: `.AppImage` (portable) or `.deb` (Debian/Ubuntu)
+          EOF
 
-          # Add available assets
+          # Start building the release command
+          release_files=()
+
+          # Check for available assets and add them to the array
           if [ -f "artifacts/windows-artifacts/OneChatApp Setup ${{ steps.package-version.outputs.version }}.exe" ]; then
-            release_args="$release_args \"artifacts/windows-artifacts/OneChatApp Setup ${{ steps.package-version.outputs.version }}.exe#OneChat-Setup-${{ steps.package-version.outputs.version }}.exe\""
+            release_files+=("artifacts/windows-artifacts/OneChatApp Setup ${{ steps.package-version.outputs.version }}.exe#OneChat-Setup-${{ steps.package-version.outputs.version }}.exe")
           fi
 
           if [ -f "artifacts/windows-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}-win.zip" ]; then
-            release_args="$release_args \"artifacts/windows-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}-win.zip#OneChat-${{ steps.package-version.outputs.version }}-windows.zip\""
+            release_files+=("artifacts/windows-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}-win.zip#OneChat-${{ steps.package-version.outputs.version }}-windows.zip")
           fi
 
           if [ -f "artifacts/macos-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}.dmg" ]; then
-            release_args="$release_args \"artifacts/macos-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}.dmg#OneChat-${{ steps.package-version.outputs.version }}.dmg\""
+            release_files+=("artifacts/macos-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}.dmg#OneChat-${{ steps.package-version.outputs.version }}.dmg")
           fi
 
           if [ -f "artifacts/macos-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}-mac.zip" ]; then
-            release_args="$release_args \"artifacts/macos-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}-mac.zip#OneChat-${{ steps.package-version.outputs.version }}-macos.zip\""
+            release_files+=("artifacts/macos-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}-mac.zip#OneChat-${{ steps.package-version.outputs.version }}-macos.zip")
           fi
 
           if [ -f "artifacts/linux-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}.AppImage" ]; then
-            release_args="$release_args \"artifacts/linux-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}.AppImage#OneChat-${{ steps.package-version.outputs.version }}.AppImage\""
+            release_files+=("artifacts/linux-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}.AppImage#OneChat-${{ steps.package-version.outputs.version }}.AppImage")
           fi
 
           if [ -f "artifacts/linux-artifacts/onechatapp_${{ steps.package-version.outputs.version }}_amd64.deb" ]; then
-            release_args="$release_args \"artifacts/linux-artifacts/onechatapp_${{ steps.package-version.outputs.version }}_amd64.deb#OneChat-${{ steps.package-version.outputs.version }}.deb\""
+            release_files+=("artifacts/linux-artifacts/onechatapp_${{ steps.package-version.outputs.version }}_amd64.deb#OneChat-${{ steps.package-version.outputs.version }}.deb")
           fi
 
-          echo "Creating release with command: gh release create $release_args"
-          eval "gh release create $release_args"
+          # Create the release
+          echo "Creating release v${{ steps.package-version.outputs.version }}-${{ github.run_number }} with ${#release_files[@]} assets"
+
+          gh release create "v${{ steps.package-version.outputs.version }}-${{ github.run_number }}" \
+            --title "Release v${{ steps.package-version.outputs.version }}-${{ github.run_number }}" \
+            --notes-file release_notes.md \
+            --draft=false \
+            --prerelease=false \
+            "${release_files[@]}"

@@ -9,8 +9,10 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
 
     strategy:
+      fail-fast: false
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
 
@@ -21,19 +23,60 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: "20"
           cache: "npm"
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Setup Python for node-gyp (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
 
-      - name: Build application
+      - name: Configure npm (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          npm config set msvs_version 2022
+          npm config set python python3.11
+
+      - name: Clean npm cache
+        run: npm cache clean --force
+
+      - name: Install dependencies (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          npm install --no-audit --no-fund --legacy-peer-deps
+        env:
+          npm_config_cache: C:\npm-cache
+          ELECTRON_CACHE: C:\electron-cache
+
+      - name: Install dependencies (Non-Windows)
+        if: matrix.os != 'windows-latest'
+        run: npm ci --no-audit --no-fund
+
+      - name: Build application and Electron app (Windows)
+        if: matrix.os == 'windows-latest'
+        run: .\build-windows.bat
+        shell: cmd
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build application (Non-Windows)
+        if: matrix.os != 'windows-latest'
         run: npm run build
 
-      - name: Build Electron app
+      - name: Build Electron app (Non-Windows)
+        if: matrix.os != 'windows-latest'
         run: npm run dist
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cleanup node_modules (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          taskkill /f /im node.exe 2>nul || true
+          timeout /t 2 /nobreak >nul
+          if exist node_modules rmdir /s /q node_modules 2>nul || true
+        continue-on-error: true
 
       - name: Upload artifacts (Windows)
         if: matrix.os == 'windows-latest'

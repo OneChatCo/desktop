@@ -8,15 +8,20 @@
 	"license": "MIT",
 	"scripts": {
 		"clean": "rimraf dist",
+		"clean:win": "if exist dist rmdir /s /q dist",
 		"copy:assets": "copyfiles -u 2 \"src/renderer/*.html\" \"src/renderer/icon.png\" dist/renderer && copyfiles \"build/*\" dist/",
 		"watch:html": "chokidar \"src/renderer/index.html\" -c \"npm run copy:html\"",
 		"tailwind:build": "tailwindcss -i ./src/renderer/styles.css -o ./dist/renderer/app.css",
 		"tailwind:watch": "tailwindcss -i ./src/renderer/styles.css -o ./dist/renderer/app.css --watch",
 		"build": "npm run clean && tsc -p tsconfig.json && npm run copy:assets && npm run tailwind:build",
+		"build:win": "npm run clean:win && tsc -p tsconfig.json && npm run copy:assets && npm run tailwind:build",
 		"dev": "concurrently -k \"tsc -w\" \"npm:watch:html\" \"npm:tailwind:watch\" \"wait-on dist/main/main.js dist/preload/index.js dist/renderer/renderer.js dist/renderer/index.html dist/renderer/app.css && electron .\"",
 		"start": "electron .",
 		"pack": "electron-builder --dir",
-		"dist": "electron-builder"
+		"dist": "electron-builder",
+		"dist:win": "electron-builder --win",
+		"dist:mac": "electron-builder --mac",
+		"dist:linux": "electron-builder --linux"
 	},
 	"dependencies": {
 		"discord-rpc": "^4.0.1",

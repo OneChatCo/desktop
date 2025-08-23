@@ -49,6 +49,11 @@ typings/
 
 # Optional npm cache directory
 .npm
+npm-cache/
+
+# Windows specific
+npm-debug.log*
+npm-error.log*
 
 # Optional eslint cache
 .eslintcache

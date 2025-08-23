@@ -3,9 +3,12 @@ productName: OneChatApp
 files:
   - dist/**
   - package.json
+  - config.json
 asar: true
 directories:
   buildResources: build
+  output: dist
+compression: normal
 mac:
   icon: build/icon.icns
   target:
@@ -15,13 +18,26 @@ mac:
 win:
   icon: build/icon.ico
   target:
-    - nsis
-    - zip
+    - target: nsis
+      arch:
+        - x64
+    - target: zip
+      arch:
+        - x64
+  requestedExecutionLevel: asInvoker
+  sign: false
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  shortcutName: "One Chat"
 linux:
   icon: build/icon.png
   target:
     - AppImage
     - deb
+  category: Network
 publish:
   - provider: github
     owner: OneChatCo

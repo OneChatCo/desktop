@@ -159,6 +159,19 @@ jobs:
         id: package-version
         run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
 
+      - name: Check if release already exists
+        id: release-exists
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "v${{ steps.package-version.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Release v${{ steps.package-version.outputs.version }} already exists"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Release v${{ steps.package-version.outputs.version }} does not exist"
+          fi
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
@@ -175,6 +188,7 @@ jobs:
           ls -la artifacts/linux-artifacts/ || echo "No Linux artifacts found"
 
       - name: Create Release and Upload Assets
+        if: steps.release-exists.outputs.exists == 'false'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -220,12 +234,12 @@ jobs:
           release_files=()
 
           # Check for available assets and add them to the array
-          if [ -f "artifacts/windows-artifacts/OneChatApp Setup ${{ steps.package-version.outputs.version }}.exe" ]; then
-            release_files+=("artifacts/windows-artifacts/OneChatApp Setup ${{ steps.package-version.outputs.version }}.exe#OneChat-Setup-${{ steps.package-version.outputs.version }}.exe")
+          if [ -f "artifacts/windows-artifacts/OneChatApp-Setup-${{ steps.package-version.outputs.version }}.exe" ]; then
+            release_files+=("artifacts/windows-artifacts/OneChatApp-Setup-${{ steps.package-version.outputs.version }}.exe")
           fi
 
-          if [ -f "artifacts/windows-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}-win.zip" ]; then
-            release_files+=("artifacts/windows-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}-win.zip#OneChat-${{ steps.package-version.outputs.version }}-windows.zip")
+          if [ -f "artifacts/windows-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}-windows.zip" ]; then
+            release_files+=("artifacts/windows-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}-windows.zip")
           fi
 
           # Add Windows metadata file for auto-updater
@@ -241,11 +255,11 @@ jobs:
           done
 
           if [ -f "artifacts/macos-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}.dmg" ]; then
-            release_files+=("artifacts/macos-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}.dmg#OneChat-${{ steps.package-version.outputs.version }}.dmg")
+            release_files+=("artifacts/macos-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}.dmg")
           fi
 
           if [ -f "artifacts/macos-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}-mac.zip" ]; then
-            release_files+=("artifacts/macos-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}-mac.zip#OneChat-${{ steps.package-version.outputs.version }}-macos.zip")
+            release_files+=("artifacts/macos-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}-mac.zip")
           fi
 
           # Add macOS metadata file for auto-updater
@@ -261,11 +275,11 @@ jobs:
           done
 
           if [ -f "artifacts/linux-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}.AppImage" ]; then
-            release_files+=("artifacts/linux-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}.AppImage#OneChat-${{ steps.package-version.outputs.version }}.AppImage")
+            release_files+=("artifacts/linux-artifacts/OneChatApp-${{ steps.package-version.outputs.version }}.AppImage")
           fi
 
           if [ -f "artifacts/linux-artifacts/onechatapp_${{ steps.package-version.outputs.version }}_amd64.deb" ]; then
-            release_files+=("artifacts/linux-artifacts/onechatapp_${{ steps.package-version.outputs.version }}_amd64.deb#OneChat-${{ steps.package-version.outputs.version }}.deb")
+            release_files+=("artifacts/linux-artifacts/onechatapp_${{ steps.package-version.outputs.version }}_amd64.deb")
           fi
 
           # Add Linux metadata file for auto-updater

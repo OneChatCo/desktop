@@ -63,7 +63,7 @@ function createWindow() {
 	Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 
 	mainWindow.loadFile(path.join(__dirname, "../renderer/index.html"));
-	mainWindow.webContents.openDevTools();
+	//mainWindow.webContents.openDevTools();
 
 	tabs = new TabManager(mainWindow);
 

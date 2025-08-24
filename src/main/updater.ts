@@ -1,7 +1,11 @@
 import { autoUpdater } from "electron-updater";
 import { BrowserWindow, dialog } from "electron";
 
+let updateWindow: BrowserWindow | null = null;
+
 export function initAutoUpdater(win: BrowserWindow) {
+	updateWindow = win;
+
 	autoUpdater.setFeedURL({
 		provider: "github",
 		owner: "OneChatCo",
@@ -16,6 +20,14 @@ export function initAutoUpdater(win: BrowserWindow) {
 
 	// Optional: Enable logging for debugging
 	autoUpdater.logger = console;
+
+	// Log the configuration
+	console.log("AutoUpdater: Configuration:", {
+		provider: "github",
+		owner: "OneChatCo",
+		repo: "desktop",
+		currentVersion: require("../../package.json").version,
+	});
 
 	// Add comprehensive event logging
 	autoUpdater.on("checking-for-update", () => {

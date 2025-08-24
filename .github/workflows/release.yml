@@ -178,18 +178,42 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Get the latest release tag to compare against
+          LATEST_TAG=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null || echo "")
+
+          # If no previous release exists, get all commits
+          if [ -z "$LATEST_TAG" ]; then
+            echo "No previous releases found, getting all commits"
+            COMMIT_RANGE=""
+          else
+            echo "Latest release tag: $LATEST_TAG"
+            COMMIT_RANGE="$LATEST_TAG..HEAD"
+          fi
+
+          # Get commit messages since last release (or all if no previous release)
+          if [ -z "$COMMIT_RANGE" ]; then
+            COMMITS=$(git log --pretty=format:"- %s (%an)" --reverse)
+          else
+            COMMITS=$(git log $COMMIT_RANGE --pretty=format:"- %s (%an)" --reverse)
+          fi
+
           # Create release notes file
-          cat > release_notes.md << 'EOF'
-          Auto-generated release from commit ${{ github.sha }}
+          cat > release_notes.md << EOF
+          ## One Chat v${{ steps.package-version.outputs.version }}
 
-          ## Changes
-          - Latest changes from commit: ${{ github.event.head_commit.message }}
+          This release includes the following changes:
 
-          ## Downloads
+          ### Changes
+          $COMMITS
+
+          ### Downloads
           Choose the appropriate version for your operating system:
-          - **Windows**: `.exe` (installer) or `.zip` (portable)
-          - **macOS**: `.dmg` (installer) or `.zip` (portable)  
-          - **Linux**: `.AppImage` (portable) or `.deb` (Debian/Ubuntu)
+          - **Windows**: \`.exe\` (installer) or \`.zip\` (portable)
+          - **macOS**: \`.dmg\` (installer) or \`.zip\` (portable)  
+          - **Linux**: \`.AppImage\` (portable) or \`.deb\` (Debian/Ubuntu)
+
+          ### Auto-Update
+          If you have a previous version installed, the app will automatically check for and prompt you to install this update.
           EOF
 
           # Start building the release command

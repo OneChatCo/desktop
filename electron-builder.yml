@@ -26,12 +26,14 @@ win:
         - x64
   requestedExecutionLevel: asInvoker
   forceCodeSigning: false
+  artifactName: "OneChatApp-${version}-windows.${ext}"
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: always
   createStartMenuShortcut: true
   shortcutName: "One Chat"
+  artifactName: "OneChatApp-Setup-${version}.${ext}"
 linux:
   icon: build/icon.png
   target:
